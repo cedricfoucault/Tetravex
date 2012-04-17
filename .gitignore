@@ -1,0 +1,33 @@
+# Compiled source #
+###################
+*.o
+*.cmi
+*.cmo
+*.cmx
+*.cma
+
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.tmproject
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.html
+
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
