@@ -2,11 +2,9 @@
   
   It provides basic definitions for the logical data of a puzzle instance
   and operations over them.
-  
-  @author "Cedric Foucault".
 *)
 
-(** The model for colors of which each tile of the tetravex is made. *)
+(** The model for the colors of the tiles' faces. *)
 module Color : sig
   (** The type of a color. *)
   type t
@@ -14,10 +12,10 @@ module Color : sig
   (** Returns the string label of a color *)
   val to_string : t -> string
   
-  (** Returns the integer representation of a color *)
+  (** Returns the integer representation of a color. *)
   val to_int : t -> int
   
-  (** Returns the color based on its integer representation *)
+  (** Returns the color based on its integer representation. *)
   val of_int : int -> t
 end
 
@@ -135,4 +133,4 @@ module Puzzle : sig
   val get_solved : t -> t
 end
 
-
+(** @author "Cedric Foucault" *)

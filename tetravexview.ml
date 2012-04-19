@@ -1,5 +1,4 @@
 open Tk ;;
-open Tetravex;;
 
 module Window = struct
   type t = Widget.toplevel Widget.widget
@@ -105,8 +104,8 @@ module TileView = struct
   let face_color i = if i < 10 then colors.(i) else `White
   let string_color i = if i < 6 then `White else `Black
   
-  let create ~model:t ?width:(width=40) ?height:(height=40) parent =
-    if Tetravex.Tile.is_empty t then 
+  let create ~model:t ?width:(width=60) ?height:(height=60) parent =
+    if TetravexModel.Tile.is_empty t then 
       Canvas.create ~width:width ~height:height 
         ~relief:`Sunken ~borderwidth:2 ~background:(`Color "#eeeeee") parent
     else begin
@@ -115,10 +114,10 @@ module TileView = struct
           ~relief:`Raised ~borderwidth:2 parent in
     let offset = 5 in
     let font = "Helvetica" in
-    let cr = Tetravex.Color.to_int (Tetravex.Tile.right_color t)
-    and ct = Tetravex.Color.to_int (Tetravex.Tile.top_color t)
-    and cl = Tetravex.Color.to_int (Tetravex.Tile.left_color t)
-    and cb = Tetravex.Color.to_int (Tetravex.Tile.bottom_color t)
+    let cr = TetravexModel.Color.to_int (TetravexModel.Tile.right_color t)
+    and ct = TetravexModel.Color.to_int (TetravexModel.Tile.top_color t)
+    and cl = TetravexModel.Color.to_int (TetravexModel.Tile.left_color t)
+    and cb = TetravexModel.Color.to_int (TetravexModel.Tile.bottom_color t)
     in
     let _ = (Canvas.create_polygon ~xys:[
     	  (width + offset, offset);
@@ -166,18 +165,18 @@ end
 
 exception No_Tile
 
-class puzzle_grid ~model:puzzle_model ?width:(w0=200) ?height:(h0=200)
+class puzzle_grid ~model:puzzle_model ?width:(w0=60) ?height:(h0=60)
 parent =
   object (self)
     val width = w0
     val height = h0
-    val m = Tetravex.Puzzle.height puzzle_model
-    val n = Tetravex.Puzzle.width puzzle_model
+    val m = TetravexModel.Puzzle.height puzzle_model
+    val n = TetravexModel.Puzzle.width puzzle_model
     val model = puzzle_model
     val grid = Frame.create ~relief:`Groove ~borderwidth:2 parent
     val mutable tiles = begin
       Array.make_matrix 0 0 (TileView.create 
-        ~model:(Tetravex.Tile.empty ()) ~width:(0) ~height:(0)
+        ~model:(TetravexModel.Tile.empty ()) ~width:(0) ~height:(0)
         parent);
     end
     val mutable drag_start_function = 
@@ -190,8 +189,6 @@ parent =
     method get_frame = grid
     
     method bind_drag_start f = drag_start_function <- f;
-    method bind_drag_move f = drag_move_function <- f;
-    method bind_drag_stop f = drag_stop_function <- f;
     
     method locate_tile x y = begin
       let tile_width = width
@@ -206,7 +203,7 @@ parent =
     method private update_bindings () = begin
       for i = 0 to m - 1 do
         for j = 0 to n - 1 do
-          let tile_model = Tetravex.Puzzle.get model i j
+          let tile_model = TetravexModel.Puzzle.get model i j
           and tile_view = tiles.(i).(j) in
           let drag_start ev = drag_start_function
             ~row:i ~col:j
@@ -239,7 +236,7 @@ parent =
        tiles <- 
          Array.init m (fun i ->
            Array.init n (fun j -> 
-             let tile_model = Tetravex.Puzzle.get puzzle_model i j in
+             let tile_model = TetravexModel.Puzzle.get puzzle_model i j in
              TileView.create ~model:tile_model
                ~width:(width) ~height:(height) grid;
            )
@@ -267,7 +264,7 @@ parent =
       Pack.forget [grid];
       Widget.remove grid;
       tiles <- Array.make_matrix 0 0 (TileView.create 
-        ~model:(Tetravex.Tile.empty ()) ~width:(0) ~height:(0)
+        ~model:(TetravexModel.Tile.empty ()) ~width:(0) ~height:(0)
         parent);
     end     
     
@@ -280,7 +277,7 @@ parent =
 let glob_id = ref 0;;
 type placed_tile = {
   id : int;
-  model : Tetravex.Tile.t;
+  model : TetravexModel.Tile.t;
   view : TileView.t;
   mutable x : int;
   mutable y : int;
@@ -319,18 +316,7 @@ class tile_set ~model:puzzle_model ?width:(w0=60) ?height:(h0=60)
       incr glob_id;
       current_id;
     end
-    method place ~model:tile_model ~view:tile_view ~x:xi ~y:yi () = begin
-      let current_id = !glob_id in 
-      set <- {
-        id = current_id;
-        model = tile_model;
-        view = tile_view;
-        x = xi;
-        y = yi;
-      } :: set;
-      incr glob_id;
-      current_id;
-    end
+
     method remove ~id:id () = set <- (remove_aux id set);
     
     val mutable drag_start_function =
@@ -403,12 +389,12 @@ class tile_set ~model:puzzle_model ?width:(w0=60) ?height:(h0=60)
     
     initializer begin
       let make_set_from_model p_model =
-        let m = Tetravex.Puzzle.height p_model
-        and n = Tetravex.Puzzle.width p_model in
+        let m = TetravexModel.Puzzle.height p_model
+        and n = TetravexModel.Puzzle.width p_model in
         let padx = 5 and pady = 5 in
         for i = 0 to m - 1 do
           for j = 0 to n - 1 do
-            let tile_model = Tetravex.Puzzle.get p_model i j in
+            let tile_model = TetravexModel.Puzzle.get p_model i j in
             ignore (self#add ~model:tile_model ~x:(x0 + j * (w0 + padx))
               ~y:(y0+ i * (h0 + pady)) ());
           done

@@ -2,34 +2,32 @@
   
   It handles the queries from the user, 
   arranges and displays the views for the application
-  and interfaces the models with the views
-  
-  @author "Cedric Foucault".
+  and interfaces the models with the views.
 *)
 
 (** Starts the application. *)
 val start : ?resolution:(int * int) -> unit -> unit
 
 (** Contains the top level window for the current game. *)
-val main_window : Tetravexview.Window.t ref
+val main_window : TetravexView.Window.t ref
 
 (** Contains the model of the current puzzle that is to solve. *)
-val tile_set_model : Tetravex.Puzzle.t ref
+val tile_set_model : TetravexModel.Puzzle.t ref
 
 (** Contains the view of the current remaining set of tiles. *)
-val tile_set_view : Tetravexview.tile_set ref
+val tile_set_view : TetravexView.tile_set ref
 
 (** Contains the model of the current, partially filled puzzle grid. *)
-val puzzle_grid_model : Tetravex.Puzzle.t ref
+val puzzle_grid_model : TetravexModel.Puzzle.t ref
 
 (** Contains the view of the current, partially filled puzzle grid. *)
-val puzzle_grid_view : Tetravexview.puzzle_grid ref
+val puzzle_grid_view : TetravexView.puzzle_grid ref
 
 (** Creates the menu for the current game. *)
-val make_menu : unit -> Tetravexview.Menu.t
+val make_menu : unit -> TetravexView.Menu.t
 
 (** Displays the menu on screen. *)
-val display_menu : Tetravexview.Menu.t -> unit
+val display_menu : TetravexView.Menu.t -> unit
 
 (** Displays the current puzzle grid on screen. *)
 val display_grid : unit -> unit
@@ -49,3 +47,6 @@ val save_as : string -> unit
 
 (** Displays the solution of the current puzzle on the grid. *)
 val solve : unit -> unit
+
+(** @author "Cedric Foucault". *)
+

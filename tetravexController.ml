@@ -11,23 +11,23 @@ let height      = ref 600;;
 
 (* init the models *)
 let tile_set_model    = ref
-  (Tetravex.Puzzle.generate default_m default_n 10);;
+  (TetravexModel.Puzzle.generate default_m default_n 10);;
 let puzzle_grid_model = ref
-  (Tetravex.Puzzle.make default_m default_n 10);;
+  (TetravexModel.Puzzle.make default_m default_n 10);;
 let puzzle_solution   = ref
-  (Tetravex.Puzzle.make default_m default_n 10);;
+  (TetravexModel.Puzzle.make default_m default_n 10);;
   
 (* init the views *)
-let main_window      = ref (Tetravexview.Window.create !width !height);;
+let main_window      = ref (TetravexView.Window.create !width !height);;
 let puzzle_grid_view = ref (
-  new Tetravexview.puzzle_grid 
+  new TetravexView.puzzle_grid 
     ~model:!puzzle_grid_model 
     ~width:(tile_width * default_n) 
     ~height:(tile_height * default_m)
     !main_window
   );;
 let tile_set_view    = ref (
-  new Tetravexview.tile_set 
+  new TetravexView.tile_set 
     ~model:!tile_set_model
     ~width:(tile_width) 
     ~height:(tile_height) !main_window
@@ -83,10 +83,10 @@ let drop_receive ~id:id ~model:tile_model rootx rooty = begin
     (* get the grid tile at the given drop location *)
     let (i, j) = !puzzle_grid_view#locate_tile x y in
     (* check if the given tile can be set at the given grid position *)
-    if (Tetravex.Puzzle.can_set !puzzle_grid_model i j tile_model) then begin
+    if (TetravexModel.Puzzle.can_set !puzzle_grid_model i j tile_model) then begin
       (* if it can be set, do it *)
-      Tetravex.Puzzle.set !puzzle_grid_model i j tile_model;
-      if (Tetravex.Puzzle.is_full !puzzle_grid_model) then begin
+      TetravexModel.Puzzle.set !puzzle_grid_model i j tile_model;
+      if (TetravexModel.Puzzle.is_full !puzzle_grid_model) then begin
         (* if the puzzle was solved by the user, congratulate him *)
         Printf.printf "%s" msg;
         flush stdout;
@@ -97,7 +97,7 @@ let drop_receive ~id:id ~model:tile_model rootx rooty = begin
       !puzzle_grid_view#update ();
     end
   with
-  | Tetravexview.No_Tile -> ();
+  | TetravexView.No_Tile -> ();
 end
 
 (* function triggered when the user releases the click *)
@@ -117,11 +117,11 @@ end
 (* function triggered when the user clicks on a tile from the puzzle grid *)
 let drag_start_grid ~row:i ~col:j ~model:tile_model ~view:view ev =
   (* allow user to drag if the tile grid is not empty *)
-  if not (Tetravex.Tile.is_empty tile_model) then begin
+  if not (TetravexModel.Tile.is_empty tile_model) then begin
     (* get the tile absolute coordinates *)
     let x = Winfo.x view + Winfo.x !puzzle_grid_view#get_frame
     and y = Winfo.y view + Winfo.y !puzzle_grid_view#get_frame in
-    Tetravex.Puzzle.set !puzzle_grid_model i j (Tetravex.Tile.empty ());
+    TetravexModel.Puzzle.set !puzzle_grid_model i j (TetravexModel.Tile.empty ());
     let id = !tile_set_view#add ~model:tile_model ~x:x ~y:y () in
     !puzzle_grid_view#update ();
     !tile_set_view#update ();
@@ -145,17 +145,17 @@ let solving_thread = ref (Thread.self ());;
 (* starts a new Tetravex puzzle with m rows and n columns *)
 let new_game m n = begin
   (* create the models for the new game *)
-  tile_set_model    := Tetravex.Puzzle.generate m n 10;
-  puzzle_grid_model := Tetravex.Puzzle.make m n 10;
+  tile_set_model    := TetravexModel.Puzzle.generate m n 10;
+  puzzle_grid_model := TetravexModel.Puzzle.make m n 10;
   (* destroy the old views *)
   !tile_set_view#destroy();
   !puzzle_grid_view#destroy();
   (* update the views corresponding to the new models *)
-  puzzle_grid_view := new Tetravexview.puzzle_grid 
+  puzzle_grid_view := new TetravexView.puzzle_grid 
     ~model:!puzzle_grid_model
     ~width:tile_width ~height:tile_height
     !main_window;
-  tile_set_view := new Tetravexview.tile_set 
+  tile_set_view := new TetravexView.tile_set 
     ~model:!tile_set_model 
     ~width:tile_width ~height:tile_height
     ~x:((!width / 2) + (!width / 2 - n * tile_height) / 2)
@@ -170,8 +170,8 @@ let new_game m n = begin
   display_grid ();
   display_set ();
   (* start to solve the puzzle in a separate thread *)
-  puzzle_solution := Tetravex.Puzzle.copy !tile_set_model;
-  solving_thread  := Thread.create Tetravex.Puzzle.solve !puzzle_solution;
+  puzzle_solution := TetravexModel.Puzzle.copy !tile_set_model;
+  solving_thread  := Thread.create TetravexModel.Puzzle.solve !puzzle_solution;
 end
 
 (* displays the solution of the current puzzle on the grid
@@ -181,7 +181,7 @@ let solve () = begin
   wait for the termination of the thread that computes the solution *)
   Thread.join !solving_thread;
   (* fill the grid with the already computed solution *)
-  Tetravex.Puzzle.fill !puzzle_grid_model !puzzle_solution;
+  TetravexModel.Puzzle.fill !puzzle_grid_model !puzzle_solution;
   (* update the grid and destroy the set of tiles *)
   !puzzle_grid_view#update();
   !tile_set_view#destroy();
@@ -190,19 +190,19 @@ end
 (* opens a puzzle from a file *)
 let open_from_file path = begin
   (* load the models for the new game *)
-  tile_set_model    := Tetravex.Puzzle.read path;
-  let m              = Tetravex.Puzzle.height !tile_set_model
-  and n              = Tetravex.Puzzle.width !tile_set_model in
-  puzzle_grid_model := Tetravex.Puzzle.make m n 10;
+  tile_set_model    := TetravexModel.Puzzle.read path;
+  let m              = TetravexModel.Puzzle.height !tile_set_model
+  and n              = TetravexModel.Puzzle.width !tile_set_model in
+  puzzle_grid_model := TetravexModel.Puzzle.make m n 10;
   (* destroy the old views *)
   !tile_set_view#destroy();
   !puzzle_grid_view#destroy();
   (* update the views corresponding to the new models *)
-  puzzle_grid_view := new Tetravexview.puzzle_grid
+  puzzle_grid_view := new TetravexView.puzzle_grid
     ~model:!puzzle_grid_model
     ~width:tile_width ~height:tile_height
     !main_window;
-  tile_set_view    := new Tetravexview.tile_set
+  tile_set_view    := new TetravexView.tile_set
     ~model:!tile_set_model 
     ~width:tile_width ~height:tile_height
     ~x:((!width / 2) + (!width / 2 - n * tile_height) / 2)
@@ -217,17 +217,17 @@ let open_from_file path = begin
   display_grid ();
   display_set ();
   (* start to solve the new puzzle in separate thread *)
-  puzzle_solution := Tetravex.Puzzle.copy !tile_set_model;
-  solving_thread  := Thread.create Tetravex.Puzzle.solve !puzzle_solution;
+  puzzle_solution := TetravexModel.Puzzle.copy !tile_set_model;
+  solving_thread  := Thread.create TetravexModel.Puzzle.solve !puzzle_solution;
 end
 
 (* saves the current puzzle *)
 let save_as filename = begin
-  Tetravex.Puzzle.save !tile_set_model filename;
+  TetravexModel.Puzzle.save !tile_set_model filename;
 end
 
 (* creates the menu for the game *)
-let make_menu () = Tetravexview.Menu.create
+let make_menu () = TetravexView.Menu.create
   ~width:!width
   ~newgamecallback:new_game ~solvecallback:solve
   ~opencallback:open_from_file ~savecallback:save_as
@@ -243,7 +243,7 @@ let start ?resolution:((w0, h0) = (800, 600)) () = begin
   (* init the resolution of the window *)
   width  := w0;
   height := h0;
-  Tetravexview.Window.resize !main_window w0 h0;
+  TetravexView.Window.resize !main_window w0 h0;
   (* init the menu *)
   let menu = make_menu () in
   (* display the menu *)

@@ -1,39 +1,23 @@
-tetravex_controller: tetravexview tetravexmodel
-	ocamlc -I +facile -I +labltk -thread facile.cma labltk.cma str.cma unix.cma threads.cma tetravex.ml tetravexview.ml tetravex_controller.ml -o main
-	
-main: view model controller
-	ocamlopt -I +facile -I +labltk -thread facile.cmxa labltk.cmxa str.cmxa unix.cmxa threads.cmxa tetravex.ml tetravexview.ml tetravex_controller.ml main.ml -o main
+all: main solve doc clean
 
-tetravexmodel: tetravexmli
-	ocamlc -I +facile facile.cma str.cma tetravex.ml -o tetravex
-# tileview: tetravexmli
-# 	ocamlc -I +facile -I +lablgtk2 lablgtk.cma gtkInit.cmo facile.cma str.cma tetravex.ml tileview.ml -o tileview
+main: model view controller
+	ocamlopt -I +facile -I +labltk -thread facile.cmxa labltk.cmxa str.cmxa unix.cmxa threads.cmxa tetravexModel.ml tetravexView.ml tetravexController.ml main.ml -o main
 	
-tetravexview: ttetravexmli tetravexviewmli
-		ocamlc -I +facile -I +labltk labltk.cma facile.cma str.cma unix.cma tetravex.ml tetravexview.ml -o tetravexview
-
-opt: tetravexmliopt
-	ocamlopt -I +facile facile.cmxa str.cmxa tetravex.ml -o tetravex
+solve: model
+	ocamlopt -I +facile facile.cmxa str.cmxa tetravexModel.ml solve.ml -o solve
+	
+doc: 
+	ocamldoc -html -I +labltk tetravexController.mli tetravexView.mli tetravexModel.mli
 
 controller: view model
-	ocamlopt -I +labltk tetravex_controller.mli
+	ocamlopt -I +labltk tetravexController.mli
 view: model
-	ocamlopt -I +labltk tetravexview.mli
+	ocamlopt -I +labltk tetravexView.mli
 model:
-	ocamlopt -I +facile tetravex.mli
-# gui: guiml
-# 	
-# guiml:
-# 	ocamlc -I +lablgtk2 lablgtk.cma gtkInit.cmo gui.ml -o gui
-
-tetravexviewmli:
-	ocamlc -I +labltk tetravexview.mli
-
-tetravexmli:
-	ocamlc tetravex.mli
-
-tetravexmliopt:
-	ocamlopt tetravex.mli
+	ocamlopt -I +facile tetravexModel.mli
 
 clean:
-	rm *.cmi *.cmo *.cmx *.html *.o
+	rm *.cmi *.cmo *.cmx *.o
+	
+cleanhtml:
+	rm *.html *.css
