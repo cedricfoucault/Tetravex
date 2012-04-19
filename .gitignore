@@ -5,6 +5,7 @@
 *.cmo
 *.cmx
 *.cma
+*.out
 
 # Packages #
 ############
@@ -23,7 +24,11 @@
 *.log
 *.sql
 *.sqlite
+
+# Documentation #
+#################
 *.html
+*.css
 
 # OS generated files #
 ######################

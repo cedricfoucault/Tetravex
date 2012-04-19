@@ -1,18 +1,24 @@
-(** This module defines the model of Tetravex.
+(** This module defines the models for Tetravex.
   
-  It provides basic definitions
-  and operations over a tetravex puzzle instance.
+  It provides basic definitions for the logical data of a puzzle instance
+  and operations over them.
   
   @author "Cedric Foucault".
 *)
 
 (** The model for colors of which each tile of the tetravex is made. *)
 module Color : sig
-  (* The type of a color. *)
+  (** The type of a color. *)
   type t
   
-  (* Returns the string label of the color *)
+  (** Returns the string label of a color *)
   val to_string : t -> string
+  
+  (** Returns the integer representation of a color *)
+  val to_int : t -> int
+  
+  (** Returns the color based on its integer representation *)
+  val of_int : int -> t
 end
 
 (** The model for Tetravex tiles. *)
@@ -20,8 +26,11 @@ module Tile : sig
   (** The type of a tile. *)
   type t
   
-  val empty : unit -> t
   (** Returns the empty tile. *)
+  val empty : unit -> t
+  
+  (** Tells if a tile is empty *)
+  val is_empty : t -> bool
   
   (** [Tile.make cr ct cl cb] returns a tile that has [cr] as its right color,
    [ct] as its top color, [cl] as its left color
@@ -54,8 +63,18 @@ module Puzzle : sig
   where the tiles are made of at most [c] different colors. *)
   val make : int -> int -> int -> t
   
+  (** [Puzzle.empty p] empties [p] (i.e fills it with empty tiles) *)
+  val empty : t -> unit
+  
   (** [Puzzle.copy p] returns a copy of [p]. *)
   val copy : t -> t
+  
+  (** [Puzzle.fill dest src] replaces each tile of [dest]
+  with the corresponding tile of [src] *)
+  val fill : t -> t -> unit
+  
+  (** Returns true if the given puzzle has no empty tile *)
+  val is_full : t -> bool
   
   (** Returns the height [m] of the puzzle's grid (number of lines). *)
   val height : t -> int

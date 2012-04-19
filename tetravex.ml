@@ -2,44 +2,14 @@ open Str
 open Facile
 open Easy
 
-(* type color = int;; *)
-(* type tile = color array;; *)
-
-(* let default_color () = 0;;
-let default_tile_ = Array.make 4 (default_color ());;
-let default_tile () = default_tile_;;
-let fresh_tile () = Array.copy (default_tile ());;
-let set_tile p c1 c2 c3 c4 = begin
-  p.(0) <- c1;
-  p.(1) <- c2;
-  p.(2) <- c3;
-  p.(3) <- c4;
-end;;
-let right_color tile = tile.(0);;
-let left_color tile = tile.(2);;
-let top_color tile = tile.(1);;
-let bottom_color tile = tile.(3);;
-let copy_tile tile = Array.copy tile;;
-let tile_to_string p = begin
-  let concatenate_color str c = str ^ (Printf.sprintf "%d " c) in
-  Array.fold_left concatenate_color "" p;
-end;; *)
-
-(* type tiles_set = tile array array;;
-
-let fresh_tiles_set m n = begin
-  Array.init m (fun _ -> Array.init n (fun _ -> fresh_tile ()))
-end;;
-
-let iter_tiles func tiles = begin
-  Array.iter (Array.iter func) tiles
-end;; *)
 module Color = struct
   type t = int
   let default () = 0
   let none () = -1
   let random c = Random.int c
   let to_string c = string_of_int c
+  let to_int c = c
+  let of_int i = i
 end;;
 
 module Tile = struct
@@ -48,6 +18,7 @@ module Tile = struct
     (Color.default(), Color.default(), Color.default(), Color.default())
   let empty () =
     (Color.none(), Color.none(), Color.none(), Color.none())
+  let is_empty t = t = empty ()
   let make cr ct cl cb = (cr, ct, cl, cb)
   let right_color (cr, _, _, _) = cr
   let top_color (_, ct, _, _) = ct
@@ -80,6 +51,42 @@ module Puzzle = struct
     tiles = Array.make (mi * ni) (Tile.empty())
   }
   
+  let copy puzzle = {
+    m = puzzle.m;
+    n = puzzle.n;
+    c = puzzle.c;
+    tiles = Array.copy puzzle.tiles;
+  }
+  
+  let fill dest src = begin
+    let dest_tiles = dest.tiles and src_tiles = src.tiles 
+    and m = dest.m and n = dest.n in
+    for i = 0 to m - 1 do
+      for j = 0 to n - 1 do
+        dest_tiles.(i * n + j) <- src_tiles.(i * n + j);
+      done
+    done
+  end
+  
+  let empty p = begin
+    let m, n, tiles = p.m, p.n, p.tiles in
+    for i = 0 to m - 1 do
+      for j = 0 to n - 1 do
+        tiles.(i * n + j) <- Tile.empty ();
+      done
+    done
+  end
+  
+  let is_full p = begin
+    let m, n, tiles = p.m, p.n, p.tiles in
+    let full = ref true in
+    for i = 0 to n * m - 1 do
+      if (Tile.is_empty tiles.(i)) then
+        full := false;
+    done;
+    !full;
+  end
+  
   let height p = p.m
   let width p = p.n
   let colors p = p.c
@@ -89,22 +96,25 @@ module Puzzle = struct
   
   let can_set p i j tile =
     let m = p.m and n = p.n and tiles = p.tiles in
-    let left_match = 
-      (j = 0) ||
-      (Tile.left_color tile = Tile.right_color tiles.(i * n + j - 1)) in
-    if left_match then
-      let right_match =
-        (j = (n - 1)) ||
-        (Tile.right_color tile = Tile.left_color tiles.(i * n + j + 1)) in
-      if right_match then
-        let top_match =
-          (i = 0) ||
-          (Tile.top_color tile = Tile.bottom_color tiles.((i - 1) * n + j)) in
-        if top_match then
-          let bottom_match =
-            (i = m - 1) ||
-            (Tile.bottom_color tile = Tile.top_color tiles.((i + 1) * n + j))
-          in bottom_match
+    if (Tile.is_empty tiles.(i * n + j)) then
+      let left_match = 
+        (j = 0) || Tile.is_empty tiles.(i * n + j - 1) ||
+        (Tile.left_color tile = Tile.right_color tiles.(i * n + j - 1)) in
+      if left_match then
+        let right_match =
+          (j = (n - 1)) || Tile.is_empty tiles.(i * n + j + 1) ||
+          (Tile.right_color tile = Tile.left_color tiles.(i * n + j + 1)) in
+        if right_match then
+          let top_match =
+            (i = 0) || Tile.is_empty tiles.((i - 1) * n + j) ||
+            (Tile.top_color tile = Tile.bottom_color tiles.((i - 1) * n + j))
+            in
+          if top_match then
+            let bottom_match =
+              (i = m - 1) || Tile.is_empty tiles.((i + 1) * n + j) ||
+              (Tile.bottom_color tile = Tile.top_color tiles.((i + 1) * n + j))
+            in bottom_match
+          else false
         else false
       else false
     else false
@@ -177,17 +187,13 @@ module Puzzle = struct
     Array.iter (fun t -> Printf.printf "%s\n" (Tile.to_string t)) p.tiles;
   end
   
-  let copy puzzle = {
-    m = puzzle.m;
-    n = puzzle.n;
-    c = puzzle.c;
-    tiles = Array.copy puzzle.tiles;
-  }
-  
   exception No_Solution;;
-
+  
+  (* finds a solution if it exists:
+  returns an array indicating the position of each tile if it does
+  or raise the exception No_Solution if it doesn't *)
   let get_solution puzzle = begin
-    let m = puzzle.m and n = puzzle.n and tiles = puzzle.tiles in
+    let m  = puzzle.m and n = puzzle.n and tiles = puzzle.tiles in
     let mn = m * n in
     (* Finite domain: *)
     (* Each tile must be placed in one of the m * n position on the board *)
@@ -199,12 +205,15 @@ module Puzzle = struct
     and columns = Array.map (fun p -> Arith.e2fd (fd2e p %~ i2e n)) positions
     in
     (* Local constraints: *)
-    (* Only two tiles that match can be next to each other *)
+    (* Two tiles can be next to each other
+       only if their adjacent faces match *)
     try
       for pos1 = 0 to mn - 1 do
-        (* right neighbor constraint *)
+        (* Init the right neighbor constraint:
+          possibility of being next to the right edge *)
         let cr = ref (fd2e columns.(pos1) =~ (i2e (n - 1)))
-        (* top neighbor constraint *)
+        (* Init the top neighbor constraint:
+          possibility of being next to the top edge *)
         and ct = ref (fd2e lines.(pos1) =~ (i2e 0))
         in
         for pos2 = 0 to mn - 1 do
@@ -212,13 +221,13 @@ module Puzzle = struct
             let tile1 = tiles.(pos1) and tile2 = tiles.(pos2) in
             (* if right color of tile1 and left color of tile2 match *)
             if (Tile.right_color tile1 = Tile.left_color tile2) then begin
-              (* position of tile1 = position of tile2 - 1 *)
+              (* add possibility position of tile1 = position of tile2 - 1 *)
               cr := !cr ||~~
                 (fd2e positions.(pos1) =~ (fd2e positions.(pos2) -~ i2e 1));
             end;
             (* if top color of tile1 and bottom color of tile2 match  *)
             if (Tile.top_color tile1 = Tile.bottom_color tile2) then begin
-              (* line of tile1 = line of tile2 + 1 *)
+              (* add possibility position of tile1 = position of tile2 + n *)
               ct := !ct ||~~
                 (fd2e positions.(pos1) =~ (fd2e positions.(pos2) +~ i2e n));
             end;
@@ -236,15 +245,6 @@ module Puzzle = struct
     with
     | _ -> raise No_Solution
   end;;
-
-  (* let place_tiles problem solution = begin
-    let m = problem.m and n = problem.n in
-    let placed_tiles = Array.make (m * n) (Tile.default()) in
-    for i = 0 to m * n - 1 do
-      placed_tiles.(solution.(i)) <- Tile.copy problem.tiles.(i);
-    done;
-    placed_tiles;
-  end;; *)
 
   let solve puzzle = begin
     let m = puzzle.m and n = puzzle.n in
