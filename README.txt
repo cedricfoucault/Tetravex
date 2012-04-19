@@ -18,3 +18,7 @@ To clean the precompiled junk (.cmi, .cmx, .cmo).
 $> make all
 To do the 4 steps above at once.
 
+You need to have the standard ocaml library and FaCiLe 
+(Functional Constraint Library - see http://www.recherche.enac.fr/opti/facile/)
+to compile this program on your machine.
+
