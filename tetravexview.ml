@@ -38,18 +38,20 @@ module Menu = struct
     ~savecallback:sac ~width:width ~rows:m ~columns:n parent = begin
     let menu = init parent in
     let button_frame = Frame.create (* ~relief:`Flat *) menu
-    and entry_frame = Frame.create (* ~relief`Flat *) menu in
-    let rows_v = Textvariable.create ()
+    and entry_frame  = Frame.create (* ~relief`Flat *) menu in
+    (* create the variables that will be linked to the values of the inputs *)
+    let rows_v    = Textvariable.create ()
     and columns_v = Textvariable.create () in
+    (* link the values of the inputs to n, m in the new game callback *)
     let newgame_callback () = begin
       try
         let m = int_of_string (Textvariable.get rows_v)
         and n = int_of_string (Textvariable.get columns_v) in
-        if (m > 1) && (m < 10) && (n > 1) && (n < 10) then begin
+        if (m > 0) && (m < 10) && (n > 0) && (n < 10) then begin
           ngc m n;
         end else begin
           Printf.fprintf stderr 
-            "The number of rows and of columns must be in [2..9]\n";
+            "The number of rows and of columns must be in [1..9]\n";
           flush stderr;
         end
       with
@@ -65,18 +67,22 @@ module Menu = struct
       open_button oc button_frame;
       save_button sac button_frame;
     ] in
+    (* calculate the padding between each button *)
     let sum_width acc button = acc + (Winfo.reqwidth button) in
     let buttons_width = List.fold_left sum_width 0 buttons in
     let padx =  
       (width - buttons_width - border_width * 2) / ((List.length buttons) * 2)
     in
-    let rows_entry = Entry.create ~width:1 ~relief:`Sunken 
+    (* create the inputs *)
+    let rows_entry    = Entry.create ~width:1 ~relief:`Sunken 
       ~font:"Helvetica" ~textvariable:rows_v entry_frame
     and columns_entry = Entry.create ~width:1 ~relief:`Sunken 
         ~font:"Helvetica" ~textvariable:columns_v entry_frame in
     let times_label = Label.create ~font:"Helvetica" ~text:"×" entry_frame in
+    (* link the value of the inputs to the created Textvaribles *)
     Textvariable.set rows_v (string_of_int m);
     Textvariable.set columns_v (string_of_int n);
+    (* display the whole menu with Pack layout manager *)
     pack buttons ~side:`Left ~padx:padx;
     pack [coe rows_entry; coe times_label; coe columns_entry] 
       ~side:`Left  ~fill:`X;
@@ -89,6 +95,7 @@ end
 
 module TileView = struct
   type t = Widget.canvas Widget.widget
+  (* define the actual colors based on their integer representation *)
   let colors = (Array.make 10 `Black);;
   let _ = begin
     colors.(1) <- `Color "#d2691e"; (* brown *)
@@ -101,24 +108,29 @@ module TileView = struct
     colors.(8) <- `Color "#ffff00"; (* yellow *)
     colors.(9) <- `White;
   end;;
-  let face_color i = if i < 10 then colors.(i) else `White
+  let face_color i   = if i < 10 then colors.(i) else `White
   let string_color i = if i < 6 then `White else `Black
   
   let create ~model:t ?width:(width=60) ?height:(height=60) parent =
-    if TetravexModel.Tile.is_empty t then 
+    if TetravexModel.Tile.is_empty t then
+      (* > Tile is empty: just draw a gray empty canvas *)
       Canvas.create ~width:width ~height:height 
         ~relief:`Sunken ~borderwidth:2 ~background:(`Color "#eeeeee") parent
     else begin
+    (* > Tile is not empty  *)
+    (* create a canvas for the whole tile *)
     let tile =
       Canvas.create ~width:width ~height:height
           ~relief:`Raised ~borderwidth:2 parent in
     let offset = 5 in
     let font = "Helvetica" in
+    (* get the actual colors of each face *)
     let cr = TetravexModel.Color.to_int (TetravexModel.Tile.right_color t)
     and ct = TetravexModel.Color.to_int (TetravexModel.Tile.top_color t)
     and cl = TetravexModel.Color.to_int (TetravexModel.Tile.left_color t)
     and cb = TetravexModel.Color.to_int (TetravexModel.Tile.bottom_color t)
     in
+    (* draw right face *)
     let _ = (Canvas.create_polygon ~xys:[
     	  (width + offset, offset);
     	  ((width + offset) / 2, (height + offset) / 2);
@@ -159,6 +171,7 @@ module TileView = struct
       ~x:(width / 2 + offset) ~y:(height * 7 / 8 + offset - 3)
       ~font:font ~anchor:`Center tile
     in
+    (* return the tile *)
     tile;
   end;;
 end
@@ -246,7 +259,6 @@ parent =
     method update () = begin
       self#update_tiles ();
       self#update_bindings();
-      (* let tiles = self#tiles in *)
       for i = 0 to m - 1 do
         for j = 0 to n - 1 do
           Tk.grid ~column:j ~row:i ~padx:0 ~pady:0 [tiles.(i).(j)];
@@ -257,20 +269,17 @@ parent =
     method destroy () = begin
       Array.iter (fun line ->
         Array.iter (fun tile_view ->
+          (* destroy each tile *)
           Grid.forget [tile_view];
           Widget.remove tile_view;
         ) line;
       ) tiles;
+      (* destroy the frame *)
       Pack.forget [grid];
       Widget.remove grid;
-      tiles <- Array.make_matrix 0 0 (TileView.create 
-        ~model:(TetravexModel.Tile.empty ()) ~width:(0) ~height:(0)
-        parent);
     end     
     
     initializer begin
-      (* self#update (); *)
-      (* pack [self#get_frame] ~side:`Left ~padx:50; *)
     end
   end
 
@@ -302,13 +311,12 @@ class tile_set ~model:puzzle_model ?width:(w0=60) ?height:(h0=60)
   end in
   object (self)
     val mutable set = []
-    (* model x y  *)
     method add ~model:tile_model ~x:xi ~y:yi () = begin
       let current_id = !glob_id in
       set <- {
         id = current_id;
         model = tile_model;
-        view = 
+        view  = 
           TileView.create ~model:tile_model ~width:w0 ~height:h0 parent;
         x = xi;
         y = yi;
@@ -401,7 +409,5 @@ class tile_set ~model:puzzle_model ?width:(w0=60) ?height:(h0=60)
         done
       in
       make_set_from_model puzzle_model;
-      (* self#update (); *)
     end
   end
-

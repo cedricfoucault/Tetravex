@@ -8,4 +8,3 @@ let _ = begin
     (* print it on standard output *)
     Puzzle.print puzzle;
 end;;
-

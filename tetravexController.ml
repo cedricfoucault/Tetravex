@@ -1,5 +1,3 @@
-(* init the seed for the pseudo-random generation of puzzle *)
-Random.self_init;;
 (* tile width and height (does not change) *)
 let tile_width  = 60;;
 let tile_height = 60;;
@@ -25,13 +23,13 @@ let puzzle_grid_view = ref (
     ~width:(tile_width * default_n) 
     ~height:(tile_height * default_m)
     !main_window
-  );;
+);;
 let tile_set_view    = ref (
   new TetravexView.tile_set 
     ~model:!tile_set_model
     ~width:(tile_width) 
     ~height:(tile_height) !main_window
-  );;
+);;
 
 (* is_dragging flag is true if the user pressed the mouse 
     and didn't release it yet *)
@@ -171,7 +169,7 @@ let new_game m n = begin
   display_set ();
   (* start to solve the puzzle in a separate thread *)
   puzzle_solution := TetravexModel.Puzzle.copy !tile_set_model;
-  solving_thread  := Thread.create TetravexModel.Puzzle.solve !puzzle_solution;
+  solving_thread := Thread.create TetravexModel.Puzzle.solve !puzzle_solution;
 end
 
 (* displays the solution of the current puzzle on the grid

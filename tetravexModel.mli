@@ -112,7 +112,6 @@ module Puzzle : sig
   
   (** [Puzzle.generate m n c] generates a random puzzle of size [m * n]
   {b which has a solution}
-  (it must be at least [2 * 2] for the generation to work); 
   [c] indicates the number of different colors for the tiles faces
   (if you don't know what to put, 10 is pretty cool :)). *)
   val generate : int -> int -> int -> t
@@ -128,6 +127,9 @@ module Puzzle : sig
   
   (** Solves a Tetravex puzzle. *)
   val solve : t -> unit
+  
+  (** Returns true if the given puzzle is solved. *)
+  val is_solved : t -> bool
   
   (** Returns a solved copy of the given puzzle. *)
   val get_solved : t -> t
