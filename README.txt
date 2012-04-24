@@ -28,3 +28,14 @@ To do the 5 steps above all at once.
 You need to have the standard ocaml library and FaCiLe 
 (Functional Constraint Library - see http://www.recherche.enac.fr/opti/facile/)
 to compile this program on your machine.
+
+Template of a puzzle instance:
+
+number_of_lines number_of_columns number_of_colors
+left top right bottom // (line, column) = (1, 1)
+left top right bottom // (line, column) = (1, 2)
+...
+left top right bottom // (line, column) = (1, n)
+left top right bottom // (line, column) = (2, 1)
+...
+left top right bottom // (line, column) = (m, n)
